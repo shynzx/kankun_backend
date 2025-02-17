@@ -1,0 +1,1 @@
+En esta carpeta se realizará la logica del CRUD, aqui se reciben los datos y se procesan dependiendo de lo que estén realizando.

@@ -1,0 +1,1 @@
+En esta carpeta se realizarán los modelos de la base de datos, al igual que cualquier clase de conexión y configuración. Recuerden que nuestro ORM es SQLAlchemy.

@@ -1,0 +1,1 @@
+En esta carpeta se crean las interfaces de datos utilizando Pydantic. Cualquier objeto JSON que se envie o se reciba debe tener un esquema correspondiente.
