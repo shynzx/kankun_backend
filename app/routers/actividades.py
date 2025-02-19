@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from app.crud import actividades
 
 router = APIRouter()
 
