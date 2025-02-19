@@ -4,6 +4,6 @@ router = APIRouter()
 
 @router.get("/reservas")
 def obtener_reservas():
-    return "reservas"
+    return {"msg": "reservas"}
 
 # Ejemplo de ruteo
