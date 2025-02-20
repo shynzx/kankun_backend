@@ -1,34 +1,38 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.models.servicios import Servicio
 from app.schemas.servicios import ServicioCreate, ServicioUpdate
 
-def get_servicio(db: Session, servicio_id: int):
-    return db.query(Servicio).filter(Servicio.id_servicio == servicio_id).first()
+async def get_servicio(db: AsyncSession, servicio_id: int):
+    result = await db.execute(select(Servicio).filter(Servicio.id_servicio == servicio_id))
+    return result.scalar_one_or_none()
 
-def get_servicios(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Servicio).offset(skip).limit(limit).all()
+async def get_servicios(db: AsyncSession, skip: int = 0, limit: int = 100):
+    result = await db.execute(select(Servicio).offset(skip).limit(limit))
+    return result.scalars().all()
 
-def create_servicio(db: Session, servicio: ServicioCreate):
+async def create_servicio(db: AsyncSession, servicio: ServicioCreate):
     db_servicio = Servicio(**servicio.dict())
     db.add(db_servicio)
-    db.commit()
-    db.refresh(db_servicio)
+    await db.commit()
+    await db.refresh(db_servicio)
     return db_servicio
 
-def update_servicio(db: Session, servicio_id: int, servicio: ServicioUpdate):
-    db_servicio = get_servicio(db, servicio_id)
+async def update_servicio(db: AsyncSession, servicio_id: int, servicio: ServicioUpdate):
+    db_servicio = await get_servicio(db, servicio_id)
     if db_servicio:
         update_data = servicio.dict(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_servicio, key, value)
-        db.commit()
-        db.refresh(db_servicio)
+        await db.commit()
+        await db.refresh(db_servicio)
     return db_servicio
 
-def delete_servicio(db: Session, servicio_id: int):
-    db_servicio = get_servicio(db, servicio_id)
+async def delete_servicio(db: AsyncSession, servicio_id: int):
+    db_servicio = await get_servicio(db, servicio_id)
     if db_servicio:
-        db.delete(db_servicio)
-        db.commit()
+        await db.delete(db_servicio)
+        await db.commit()
         return True
     return False
+
