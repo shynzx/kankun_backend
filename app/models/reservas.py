@@ -3,6 +3,7 @@ from app.models.base import Base
 
 class Reserva(Base):
     __tablename__ = 'reservas'
+    __table_args__ = {'extend_existing': True}
     
     id_reserva = Column(Integer, primary_key=True, autoincrement=True)
     id_usuario = Column(Integer, ForeignKey('usuarios.id_usuario'), nullable=False)

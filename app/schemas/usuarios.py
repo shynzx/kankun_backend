@@ -11,11 +11,15 @@ class UsuarioBase(BaseModel):
     rol_usuario: str = Field(..., max_length=50)
     region_usuario: str = Field(..., max_length=100)
 
-class UsuarioCreate(UsuarioBase):
+class crear_usuario(UsuarioBase):
     password_usuario: str = Field(..., min_length=6)
 
-class UsuarioResponse(UsuarioBase):
+class buscar_usuario(UsuarioBase):
     id_usuario: int
 
     class Config:
         from_attributes = True
+
+class Token(BaseModel):
+  access_token: str | None = None
+  refresh_token: str | None = None

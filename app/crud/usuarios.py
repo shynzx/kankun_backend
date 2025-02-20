@@ -1,14 +1,16 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.models.usuarios import Usuario
-from app.schemas.usuarios import UsuarioCreate
+from app.schemas.usuarios import crear_usuario
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_usuario_by_email(db: Session, email: str):
-    return db.query(Usuario).filter(Usuario.correo_usuario == email).first()
+async def get_usuario_by_email(db: AsyncSession, email: str):
+    result = await db.execute(select(Usuario).filter(Usuario.correo_usuario == email))
+    return result.scalars().first()  # Extrae el primer usuario
 
-def create_usuario(db: Session, usuario: UsuarioCreate):
+async def create_usuario(db: AsyncSession, usuario: crear_usuario):
     hashed_password = pwd_context.hash(usuario.password_usuario)
     db_usuario = Usuario(
         nombre_usuario=usuario.nombre_usuario,
@@ -19,6 +21,6 @@ def create_usuario(db: Session, usuario: UsuarioCreate):
         region_usuario=usuario.region_usuario
     )
     db.add(db_usuario)
-    db.commit()
-    db.refresh(db_usuario)
+    await db.commit()
+    await db.refresh(db_usuario)  # Recargar para ver los ultimos cambios
     return db_usuario
