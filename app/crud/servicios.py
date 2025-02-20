@@ -1,57 +1,34 @@
-# CRUD DE ACTIVIDADES
-# EL CODIGO ES INCORRECTO, ESTE MODULO AHORA PERTENECE A JORGE
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlalchemy.orm import Session
+from app.models.servicios import Servicio
+from app.schemas.servicios import ServicioCreate, ServicioUpdate
 
-router = APIRouter(prefix="/servicios", tags=["Servicios"])
+def get_servicio(db: Session, servicio_id: int):
+    return db.query(Servicio).filter(Servicio.id_servicio == servicio_id).first()
 
-@router.post("/", response_model=ServicioRead)
-async def create_servicio(servicio: ServicioCreate, session: AsyncSession = Depends(get_session)):
-    existing_service = await session.execute(select(Servicio).where(Servicio.nombre_servicio == servicio.nombre_servicio))
-    if existing_service.scalar():
-        raise HTTPException(status_code=400, detail="El servicio ya existe.")
+def get_servicios(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(Servicio).offset(skip).limit(limit).all()
 
-    nuevo_servicio = Servicio(**servicio.model_dump())  
-    session.add(nuevo_servicio)
-    await session.commit()
-    await session.refresh(nuevo_servicio)
-    return nuevo_servicio
+def create_servicio(db: Session, servicio: ServicioCreate):
+    db_servicio = Servicio(**servicio.dict())
+    db.add(db_servicio)
+    db.commit()
+    db.refresh(db_servicio)
+    return db_servicio
 
-@router.get("/", response_model=list[ServicioRead])
-async def get_servicios(session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(Servicio))
-    return result.scalars().all()
+def update_servicio(db: Session, servicio_id: int, servicio: ServicioUpdate):
+    db_servicio = get_servicio(db, servicio_id)
+    if db_servicio:
+        update_data = servicio.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_servicio, key, value)
+        db.commit()
+        db.refresh(db_servicio)
+    return db_servicio
 
-@router.get("/{servicio_id}", response_model=ServicioRead)
-async def get_servicio(servicio_id: int, session: AsyncSession = Depends(get_session)):
-    servicio = await session.get(Servicio, servicio_id)
-    if not servicio:
-        raise HTTPException(status_code=404, detail="Servicio no fue encontrado")
-    return servicio
-
-@router.put("/{servicio_id}", response_model=ServicioRead)
-async def update_servicio(servicio_id: int, update_data: ServicioUpdate, session: AsyncSession = Depends(get_session)):
-    servicio = await session.get(Servicio, servicio_id)
-    if not servicio:
-        raise HTTPException(status_code=404, detail="Servicio no fue encontrado")
-    
-    update_data_dict = update_data.model_dump(exclude_unset=True)
-    for key, value in update_data_dict.items():
-        setattr(servicio, key, value)
-
-    session.add(servicio)
-    await session.commit()
-    await session.refresh(servicio)
-    return servicio
-
-@router.delete("/{servicio_id}")
-async def delete_servicio(servicio_id: int, session: AsyncSession = Depends(get_session)):
-    servicio = await session.get(Servicio, servicio_id)
-    if not servicio:
-        raise HTTPException(status_code=404, detail="Servicio no fue encontrado")
-    
-    await session.delete(servicio)
-    await session.commit()
-    return {"message": "Servicio eliminado exitosamente"}
-
+def delete_servicio(db: Session, servicio_id: int):
+    db_servicio = get_servicio(db, servicio_id)
+    if db_servicio:
+        db.delete(db_servicio)
+        db.commit()
+        return True
+    return False

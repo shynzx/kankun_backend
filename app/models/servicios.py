@@ -12,9 +12,9 @@ class Servicio(Base):
     descripcion_servicio = Column(Text, nullable=False)
     costo_servicio = Column(Float, nullable=False)
     direccion_servicio = Column(String(255), nullable=False)
-    alimentos_servicio = Column(ARRAY(String), nullable=False)  # PostgreSQL ARRAY (tipo de dato)
+    alimentos_servicio = Column(ARRAY(String), nullable=False)
     horario_servicio = Column(String(255), nullable=False)
     imagen_servicio = Column(String(255), nullable=False)
-    restricciones_servicio = Column(Text, nullable=True)  # C'est opcional
-    # Relacion N:N con tours
+    restricciones_servicio = Column(Text, nullable=True)
     tours = relationship("Tour", secondary=tour_servicio, back_populates="servicios")
+
