@@ -7,7 +7,8 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.auth import create_token, authenticate_user, RoleChecker, get_current_user
-from app.models.usuarios import Usuario, Token
+from app.models.usuarios import Usuario
+from app.schemas.usuarios import Token
 from app.models.db_connect import get_session
 from pydantic import BaseModel
 

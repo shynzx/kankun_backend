@@ -6,9 +6,10 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-async def get_usuario_by_email(db: AsyncSession, email: str):
-    result = await db.execute(select(Usuario).filter(Usuario.correo_usuario == email))
-    return result.scalars().first()  # Extrae el primer usuario
+async def get_usuario_by_email(session: AsyncSession, correo_usuario: str):
+    stmt = select(Usuario).where(Usuario.correo_usuario == correo_usuario)  # Filtro correcto
+    result = await session.execute(stmt)  # Ejecutar consulta
+    return result.scalars().first()  # Obtener el primer resultado
 
 async def create_usuario(db: AsyncSession, usuario: crear_usuario):
     hashed_password = pwd_context.hash(usuario.password_usuario)

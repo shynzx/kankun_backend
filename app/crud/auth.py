@@ -16,9 +16,9 @@ SECRET_KEY = "hdhfh5jdnb7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 
 async def get_user(session: AsyncSession, correo_usuario: str):
-    result = await session.execute(select(Usuario).where(Usuario.correo_usuario == correo_usuario))
-    user = result.scalars().first()
-    return user
+    stmt = select(Usuario).where(Usuario.correo_usuario == correo_usuario)  # Usar filter_by para atributos de clase
+    result = await session.execute(stmt)  # Ejecutar la consulta
+    return result.scalars().first()
 
 async def authenticate_user(session: AsyncSession, correo_usuario: str, password: str):
     user = await get_user(session, correo_usuario)
