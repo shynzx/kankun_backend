@@ -1,21 +1,21 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-class nuevo_usuario(BaseModel):
-    nombre_usuario: str
-    correo_usuario: str
-    telefono_usuario: str
-    password_usuario: str
-    rol_usuario: str
-    region_usuario: str
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 
-class leer_usuario(BaseModel):
-    id: int
+class UsuarioBase(BaseModel):
+    nombre_usuario: str = Field(..., max_length=255)
+    correo_usuario: EmailStr
+    telefono_usuario: str = Field(..., max_length=20)
+    rol_usuario: str = Field(..., max_length=50)
+    region_usuario: str = Field(..., max_length=100)
 
-class modificar_usuario(BaseModel):
-    nombre_usuario: Optional[str] = None
-    correo_usuario: Optional[EmailStr] = None
-    telefono_usuario: Optional[str] = None
-    password_usuario: Optional[str] = None
-    rol_usuario: Optional[str] = None
-    region_usuario: Optional[str] = None
+class UsuarioCreate(UsuarioBase):
+    password_usuario: str = Field(..., min_length=6)
+
+class UsuarioResponse(UsuarioBase):
+    id_usuario: int
+
+    class Config:
+        from_attributes = True

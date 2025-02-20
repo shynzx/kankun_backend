@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from app.models.base import Base
+from pydantic import BaseModel
 
 class Usuario(Base):
     __tablename__ = 'usuarios'
@@ -10,3 +11,7 @@ class Usuario(Base):
     password_usuario = Column(String, nullable=False)
     rol_usuario = Column(String, nullable=False)
     region_usuario = Column(String, nullable=False)
+
+class Token(BaseModel):
+  access_token: str | None = None
+  refresh_token: str | None = None
