@@ -1,9 +1,8 @@
 # CRUD DE ACTIVIDADES
-
+# EL CODIGO ES INCORRECTO, ESTE MODULO AHORA PERTENECE A JORGE
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from app.models.db_connect import 
 
 router = APIRouter(prefix="/servicios", tags=["Servicios"])
 

@@ -1,14 +1,13 @@
 from sqlalchemy import Column, Integer, String, Float, Text
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import relationship
+from app.models.base import Base
+from app.models.tour_servicio import tour_servicio
 from sqlalchemy.dialects.postgresql import ARRAY
 
-class Base(DeclarativeBase):
-    pass
+class Servicio(Base):
+    __tablename__ = "servicios"
 
-class Actividad(Base):
-    __tablename__ = "actividad"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id_servicio = Column(Integer, primary_key=True, autoincrement=True)
     nombre_servicio = Column(String(255), nullable=False)
     descripcion_servicio = Column(Text, nullable=False)
     costo_servicio = Column(Float, nullable=False)
@@ -17,3 +16,5 @@ class Actividad(Base):
     horario_servicio = Column(String(255), nullable=False)
     imagen_servicio = Column(String(255), nullable=False)
     restricciones_servicio = Column(Text, nullable=True)  # C'est opcional
+    # Relacion N:N con tours
+    tours = relationship("Tour", secondary=tour_servicio, back_populates="servicios")

@@ -1,18 +1,19 @@
-from sqlalchemy import Column, Integer, String, Float, Text
-from sqlalchemy.orm import DeclarativeBase
-
-class Base(DeclarativeBase):
-    pass
+from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy.orm import relationship
+from app.models.base import Base
+from app.models.tour_servicio import tour_servicio
 
 class Tour(Base):
-    __tablename__ = "tour"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    nombre_tour = Column(String(255), nullable=False)
-    descripcion_tour = Column(Text, nullable=False)
-    costo_tour = Column(Float, nullable=False)
+    __tablename__ = 'tours'
+    
+    id_tour = Column(Integer, primary_key=True, autoincrement=True)
+    nombre_tour = Column(String, nullable=False)
+    descripcion_tour = Column(String, nullable=True)
+    costo_tour = Column(Numeric(10, 2), nullable=False)
     dias_tour = Column(Integer, nullable=False)
-    tipo_tour = Column(String(100), nullable=False)
-    max_personas_tour = Column(Integer, nullable=False)
-    direccion_inicio_tour = Column(String(255), nullable=False)
-    direccion_destino_tour = Column(String(255), nullable=False)
+    tipo_tour = Column(String, nullable=False)
+    maxpersonas_tour = Column(Integer, nullable=False)
+    direccion_inicio_tour = Column(String, nullable=False)
+    direccion_destino_tour = Column(String, nullable=False)
+    # Relación N:N con servicios
+    servicios = relationship("Servicio", secondary=tour_servicio, back_populates="tours")
