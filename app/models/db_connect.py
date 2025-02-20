@@ -9,20 +9,19 @@ from app.models.servicios import Servicio
 from app.models.ticket import Ticket
 from app.models.tour_servicio import tour_servicio
 from app.models.tours import Tour
-from app.models.usuarios import Usuario
 
 # Cargar variables de entorno
 load_dotenv()
 
 # Configuración de la base de datos
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "KanKunBD")
+DB_NAME = os.getenv("DB_NAME", "KanKunDB")
 
 # Crear conexión con la base de datos
-DATABASE_URL = f"postgresql+asyncpg://postgres:@localhost:5432/KanKunBD"
+DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_async_engine(DATABASE_URL, echo=True)
 
 # Crear sesión asíncrona
@@ -46,6 +45,8 @@ async def probar_conexion():
             print("✅ Conectado a la base de datos exitosamente!")
     except Exception as e:
         print(f"❌ Error conectando la base de datos: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

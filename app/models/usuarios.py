@@ -12,6 +12,4 @@ class Usuario(Base):
     rol_usuario = Column(String, nullable=False)
     region_usuario = Column(String, nullable=False)
 
-class Token(BaseModel):
-  access_token: str | None = None
-  refresh_token: str | None = None
+
