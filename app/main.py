@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from .routers import tours
 from .routers import auth
 from .routers import usuarios
+from .routers import servicios
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,4 +29,5 @@ def mensaje_root():
 app.include_router(tours.router)
 app.include_router(auth.router)
 app.include_router(usuarios.router)
+app.include_router(servicios.router)
 
