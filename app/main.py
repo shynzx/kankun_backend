@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import uvicorn
 # Iniciando la clase FastAPI para poder crear los endpoints
-app = FastAPI()
+app = FastAPI(title="API KanKun Tours.", description="API de sistema de gestión de Tours KanKun. Realizada empleando Python con el framework FastAPI.", version="Development")
 
 app.add_middleware(
     CORSMiddleware,
