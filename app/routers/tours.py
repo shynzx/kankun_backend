@@ -4,8 +4,12 @@ from typing import List
 from app.crud import tours as tours_crud
 from app.schemas.tours import TourCreate, TourResponse, TourUpdate
 from app.models.db_connect import get_session  
+from app.crud.auth import get_current_active_user, RoleChecker
 
 router = APIRouter(prefix='/tours', tags=['Tours'])
+
+allow_create_servicio = RoleChecker(["admin"])
+allow_modify_servicio = RoleChecker(["admin"])
 
 @router.get("/", response_model=List[TourResponse])
 async def get_tours(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_session)):

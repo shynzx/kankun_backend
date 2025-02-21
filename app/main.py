@@ -4,6 +4,7 @@ from .routers import tours
 from .routers import auth
 from .routers import usuarios
 from .routers import servicios
+from .routers import reservas
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,4 +31,5 @@ app.include_router(tours.router)
 app.include_router(auth.router)
 app.include_router(usuarios.router)
 app.include_router(servicios.router)
+app.include_router(reservas.router)
 

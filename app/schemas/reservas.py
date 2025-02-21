@@ -19,7 +19,7 @@ class ReservaUpdate(BaseModel):
     costo_reserva: Optional[Decimal] = None
     estatus: Optional[str] = None
 
-class ReservaRead(ReservaBase):
+class ReservaResponse(ReservaBase):
     id_reserva: int
 
     class Config:
