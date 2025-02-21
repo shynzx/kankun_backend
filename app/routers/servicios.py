@@ -4,7 +4,7 @@ from typing import List
 from app.crud import servicios as servicios_crud
 from app.schemas.servicios import ServicioCreate, ServicioResponse, ServicioUpdate
 from app.models.db_connect import get_session
-from app.auth import get_current_active_user, RoleChecker
+from app.crud.auth import get_current_active_user, RoleChecker
 
 router = APIRouter(prefix='/servicios', tags=['Servicios'])
 
