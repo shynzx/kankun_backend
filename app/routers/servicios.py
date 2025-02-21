@@ -8,15 +8,11 @@ from app.crud.auth import get_current_active_user, RoleChecker
 
 router = APIRouter(prefix='/servicios', tags=['Servicios'])
 
-allow_create_servicio = RoleChecker(["admin"])
-allow_modify_servicio = RoleChecker(["admin"])
-
 @router.get("/", response_model=List[ServicioResponse])
 async def get_servicios(
     skip: int = 0, 
     limit: int = 100, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_active_user)
 ):
     servicios = await servicios_crud.get_servicios(db, skip=skip, limit=limit)
     return servicios
@@ -25,7 +21,6 @@ async def get_servicios(
 async def get_servicio(
     servicio_id: int, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_active_user)
 ):
     servicio = await servicios_crud.get_servicio(db, servicio_id)
     if servicio is None:
@@ -36,7 +31,7 @@ async def get_servicio(
 async def create_servicio(
     servicio: ServicioCreate, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_create_servicio)
+
 ):
     return await servicios_crud.create_servicio(db, servicio)
 
@@ -45,7 +40,7 @@ async def update_servicio(
     servicio_id: int, 
     servicio: ServicioUpdate, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_modify_servicio)
+
 ):
     updated_servicio = await servicios_crud.update_servicio(db, servicio_id, servicio)
     if updated_servicio is None:
@@ -56,7 +51,7 @@ async def update_servicio(
 async def delete_servicio(
     servicio_id: int, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_modify_servicio)
+
 ):
     success = await servicios_crud.delete_servicio(db, servicio_id)
     if not success:

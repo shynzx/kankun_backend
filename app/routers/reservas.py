@@ -4,27 +4,21 @@ from typing import List
 from app.crud import reservas as reservas_crud
 from app.schemas.reservas import ReservaCreate, ReservaResponse, ReservaUpdate
 from app.models.db_connect import get_session
-from app.crud.auth import get_current_active_user, RoleChecker
 
 router = APIRouter(prefix='/reservas', tags=['Reservas'])
-
-allow_create_reserva = RoleChecker(["admin"])
-allow_modify_reserva = RoleChecker(["admin"])
 
 @router.get("/", response_model=List[ReservaResponse])
 async def get_reservas(
     skip: int = 0, 
     limit: int = 100, 
-    db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_active_user)
+    db: AsyncSession = Depends(get_session)
 ):
     return await reservas_crud.get_reservas(db, skip=skip, limit=limit)
 
 @router.get("/{reserva_id}", response_model=ReservaResponse)
 async def get_reserva(
     reserva_id: int, 
-    db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_active_user)
+    db: AsyncSession = Depends(get_session)
 ):
     reserva = await reservas_crud.get_reserva(db, reserva_id)
     if reserva is None:
@@ -35,7 +29,6 @@ async def get_reserva(
 async def create_reserva(
     reserva: ReservaCreate, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_create_reserva)
 ):
     return await reservas_crud.create_reserva(db, reserva)
 
@@ -44,7 +37,6 @@ async def update_reserva(
     reserva_id: int, 
     reserva: ReservaUpdate, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_modify_reserva)
 ):
     updated_reserva = await reservas_crud.update_reserva(db, reserva_id, reserva)
     if updated_reserva is None:
@@ -55,7 +47,6 @@ async def update_reserva(
 async def delete_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_modify_reserva)
 ):
     success = await reservas_crud.delete_reserva(db, reserva_id)
     if not success:
@@ -66,7 +57,6 @@ async def delete_reserva(
 async def confirm_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_modify_reserva)
 ):
     success = await reservas_crud.confirm_reservation(db, reserva_id)
     if not success:
@@ -77,7 +67,6 @@ async def confirm_reserva(
 async def cancel_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(allow_modify_reserva)
 ):
     success = await reservas_crud.cancel_reservation(db, reserva_id)
     if not success:
