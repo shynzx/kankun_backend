@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from app.models.base import Base
-from pydantic import BaseModel
+from sqlalchemy.orm import relationship
 
 class Usuario(Base):
     __tablename__ = 'usuarios'
@@ -11,5 +11,7 @@ class Usuario(Base):
     password_usuario = Column(String, nullable=False)
     rol_usuario = Column(String, nullable=False)
     region_usuario = Column(String, nullable=False)
-
-
+    stripe_customer_id = Column(String, unique=True)  # ID de cliente de Stripe
+    
+    # Relaciones
+    pagos = relationship("Pago", back_populates="usuario")
