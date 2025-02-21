@@ -23,3 +23,6 @@ class buscar_usuario(UsuarioBase):
 class Token(BaseModel):
   access_token: str | None = None
   refresh_token: str | None = None
+
+class auth_response(Token):
+    correo_usuario: str
