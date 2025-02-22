@@ -17,8 +17,12 @@ ALGORITHM = "HS256"
 
 async def get_user(session: AsyncSession, correo_usuario: str):
     stmt = select(Usuario).where(Usuario.correo_usuario == correo_usuario)  # Usar filter_by para atributos de clase
-    result = await session.execute(stmt)  # Ejecutar la consulta
+    try:
+        result = await session.execute(stmt)  # Ejecutar la consulta
+    except:
+        raise HTTPException(status_code=404, detail="el ususario no existe en la base de datos")
     return result.scalars().first()
+
 
 async def authenticate_user(session: AsyncSession, correo_usuario: str, password: str):
     user = await get_user(session, correo_usuario)

@@ -11,5 +11,4 @@ async def registrar_usuario(usuario: crear_usuario, db: AsyncSession = Depends(g
     db_usuario = await get_usuario_by_email(db, usuario.correo_usuario)
     if db_usuario:
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
-    
     return await create_usuario(db, usuario)

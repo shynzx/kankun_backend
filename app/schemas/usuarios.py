@@ -20,9 +20,3 @@ class buscar_usuario(UsuarioBase):
     class Config:
         from_attributes = True
 
-class Token(BaseModel):
-  access_token: str | None = None
-  refresh_token: str | None = None
-
-class auth_response(Token):
-    correo_usuario: str
