@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Enum
 from app.models.base import Base
+import enum
 
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
-from app.models.base import Base
+class EstadoReserva(enum.Enum):
+    ACTIVO = "activo"
+    PENDIENTE = "pendiente"
+    CANCELADO = "cancelado"
 
 class Reserva(Base):
     __tablename__ = 'reservas'
@@ -13,4 +16,4 @@ class Reserva(Base):
     id_pago = Column(Integer, ForeignKey('pagos.id_pago'), nullable=False)
     id_tour = Column(Integer, ForeignKey('tours.id_tour'), nullable=False)
     costo_reserva = Column(Numeric(10, 2), nullable=False)
-    estatus = Column(String, nullable=False)
+    estado = Column(Enum(EstadoReserva), nullable=False)
