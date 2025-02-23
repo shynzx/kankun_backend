@@ -1,10 +1,7 @@
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-import stripe
-import os
-from app.models.pagos import Pago
-from app.models.usuarios import Usuario
-from app.models.tours import Tour
+from sqlalchemy import select, update
+from app.models.db_connect import get_session
 from app.schemas.payments import (
     PaymentCreate, 
     PaymentResponse, 
@@ -12,14 +9,19 @@ from app.schemas.payments import (
     CustomerCreate,
     CustomerResponse,
     PriceCreate,
-    PriceResponse
+    PriceResponse,
+    ApiResponse
 )
-from fastapi import HTTPException
+from app.models.pagos import Pago
+from app.models.usuarios import Usuario
+from app.models.tours import Tour
+import stripe
+import os
 from datetime import datetime
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
-async def create_stripe_customer(customer: CustomerCreate) -> CustomerResponse:
+async def create_stripe_customer(customer: CustomerCreate):
     try:
         stripe_customer = stripe.Customer.create(
             name=customer.name,
@@ -34,7 +36,7 @@ async def create_stripe_customer(customer: CustomerCreate) -> CustomerResponse:
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-async def create_stripe_price(price: PriceCreate) -> PriceResponse:
+async def create_stripe_price(price: PriceCreate):
     try:
         product = stripe.Product.create(
             name=price.name,
@@ -83,7 +85,7 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url='http://localhost:5173/success',
+            success_url='http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url='http://localhost:5173/cancel',
         )
 
@@ -98,7 +100,7 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
             stripe_price_id=tour.stripe_price_id,
             metodo_pago='card',
             iva_pago=iva,
-            estado_pago='pending',
+            estado_pago='pending',  # Inicialmente pending
             costo_total_pago=costo_total + iva,
             fecha_pago=datetime.utcnow(),
             id_usuario=usuario.id_usuario,
@@ -123,7 +125,10 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
 
 async def get_payment_status(db: AsyncSession, session_id: str):
     try:
+        # Retrieve the session from Stripe
         session = stripe.checkout.Session.retrieve(session_id)
+        
+        # Get the payment from our database
         payment = await db.execute(
             select(Pago).where(Pago.stripe_session_id == session_id)
         )
@@ -132,8 +137,19 @@ async def get_payment_status(db: AsyncSession, session_id: str):
         if not db_payment:
             raise HTTPException(status_code=404, detail="Payment not found")
 
+        # Update payment status in database if it's different
+        if session.payment_status == 'paid' and db_payment.estado_pago == 'pending':
+            await db.execute(
+                update(Pago)
+                .where(Pago.stripe_session_id == session_id)
+                .values(estado_pago='completed')
+            )
+            await db.commit()
+            # Refresh the payment object to get updated status
+            await db.refresh(db_payment)
+
         return PaymentStatus(
-            status=session.payment_status,
+            status=db_payment.estado_pago,
             amount=db_payment.costo_total_pago,
             currency='mxn',
             created_at=db_payment.fecha_pago
