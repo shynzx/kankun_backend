@@ -6,56 +6,10 @@ from app.schemas.payments import (
     PaymentCreate, 
     PaymentResponse, 
     PaymentStatus, 
-    ApiResponse,
-    CustomerCreate,
-    PriceCreate
+    ApiResponse
 )
 
 router = APIRouter(prefix='/api', tags=['Payments'])
-
-@router.post("/customers", response_model=ApiResponse, 
-    summary="Crear un nuevo cliente en Stripe",
-    response_description="Información del cliente creado en Stripe"
-)
-async def create_customer(
-    customer: CustomerCreate,
-    db: AsyncSession = Depends(get_session)
-):
-    try:
-        result = await payments_crud.create_stripe_customer(customer)
-        return ApiResponse(
-            success=True,
-            data=result.dict(),
-            message="Cliente creado exitosamente"
-        )
-    except Exception as e:
-        return ApiResponse(
-            success=False,
-            error={"detail": str(e)},
-            message="Error al crear el cliente"
-        )
-
-@router.post("/prices", response_model=ApiResponse,
-    summary="Crear un nuevo precio en Stripe",
-    response_description="Información del precio creado en Stripe"
-)
-async def create_price(
-    price: PriceCreate,
-    db: AsyncSession = Depends(get_session)
-):
-    try:
-        result = await payments_crud.create_stripe_price(price)
-        return ApiResponse(
-            success=True,
-            data=result.dict(),
-            message="Precio creado exitosamente"
-        )
-    except Exception as e:
-        return ApiResponse(
-            success=False,
-            error={"detail": str(e)},
-            message="Error al crear el precio"
-        )
 
 @router.post("/payments", response_model=ApiResponse,
     summary="Crear una nueva sesión de pago",
