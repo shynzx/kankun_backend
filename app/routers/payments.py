@@ -10,18 +10,13 @@ from app.schemas.payments import (
     CustomerCreate,
     PriceCreate
 )
-from app.crud.auth import get_current_active_user, RoleChecker
-from typing import Annotated
 
 router = APIRouter(prefix='/api', tags=['Payments'])
-
-# Verificador de roles para administradores
-allow_create_price = RoleChecker(["admin"])
 
 @router.post("/customers", response_model=ApiResponse)
 async def create_customer(
     customer: CustomerCreate,
-    current_user: dict = Depends(get_current_active_user)
+    db: AsyncSession = Depends(get_session)
 ):
     try:
         result = await payments_crud.create_stripe_customer(customer)
@@ -40,7 +35,7 @@ async def create_customer(
 @router.post("/prices", response_model=ApiResponse)
 async def create_price(
     price: PriceCreate,
-    current_user: dict = Depends(allow_create_price)
+    db: AsyncSession = Depends(get_session)
 ):
     try:
         result = await payments_crud.create_stripe_price(price)
@@ -59,8 +54,7 @@ async def create_price(
 @router.post("/payments", response_model=ApiResponse)
 async def create_payment(
     payment: PaymentCreate,
-    db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_active_user)
+    db: AsyncSession = Depends(get_session)
 ):
     try:
         result = await payments_crud.create_payment_session(db, payment)
@@ -79,8 +73,7 @@ async def create_payment(
 @router.get("/payments/{session_id}", response_model=ApiResponse)
 async def get_payment_status(
     session_id: str,
-    db: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_active_user)
+    db: AsyncSession = Depends(get_session)
 ):
     try:
         result = await payments_crud.get_payment_status(db, session_id)
