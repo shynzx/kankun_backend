@@ -30,3 +30,5 @@ class TourResponse(TourBase):
     class Config:
         from_attributes = True
 
+class AddServicioToTour(BaseModel):
+    id_servicio: int
