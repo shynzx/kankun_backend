@@ -12,6 +12,10 @@ router = APIRouter(prefix='/metricas', tags=["Metricas"])
 async def get_cancelaciones(
         db: AsyncSession = Depends(get_session)
     ):
+        """
+        Busca todas las instancias de cancelaciones dentro de las reservas, las cuenta y posteriormente regresa el número total de reservas, la cantidad de cancelaciones, y el porcentaje de cancelaciones:
+    
+        """
         cancelaciones = await get_porcentaje_cancelaciones(db)
         
         if not cancelaciones:
@@ -24,6 +28,12 @@ async def get_reservados(
     db: AsyncSession = Depends(get_session),
     limit: int = 10
 ):
+    """
+    Busca todas las reservas, y cuenta la cantidad de veces que se ha reservado un tour, posteriormente retorna los tours con su id, nombre y veces que se han reservado en una lista que va del mayor al menor:
+
+    - **limit**: cantidad de tours que son retornados, por defecto, 10.
+    
+    """
     if limit <= 0:
         raise HTTPException(status_code=400, detail="El limite debe ser mayor que 0!")
 
