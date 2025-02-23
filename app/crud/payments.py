@@ -7,9 +7,8 @@ from app.schemas.payments import (
     PaymentResponse, 
     PaymentStatus,
     CustomerCreate,
-    CustomerResponse,
-    PriceCreate,
     PriceResponse,
+    PriceCreate,
     ApiResponse
 )
 from app.models.pagos import Pago
@@ -58,6 +57,39 @@ async def create_stripe_price(price: PriceCreate):
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+async def update_payment_status(db: AsyncSession, session_id: str, new_status: str):
+    try:
+        stmt = (
+            update(Pago)
+            .where(Pago.stripe_session_id == session_id)
+            .values(estado_pago=new_status)
+        )
+        await db.execute(stmt)
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating payment status: {str(e)}")
+
+async def check_session_status(db: AsyncSession, session_id: str):
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        payment_status = session.payment_status
+        
+        # Mapear estados de Stripe a nuestros estados
+        stripe_to_db_status = {
+            'paid': 'completed',
+            'unpaid': 'pending',
+            'canceled': 'cancelled',
+            'expired': 'failed'
+        }
+        
+        new_status = stripe_to_db_status.get(payment_status, 'pending')
+        await update_payment_status(db, session_id, new_status)
+        
+        return new_status
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
     try:
         # Obtener usuario y tour de la base de datos
@@ -87,11 +119,15 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
             mode='payment',
             success_url='http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url='http://localhost:5173/cancel',
+            payment_intent_data={
+                'setup_future_usage': 'off_session'
+            }
         )
 
-        # Calcular IVA (16%)
         costo_total = float(tour.costo_tour)
-        iva = costo_total * 0.16
+        # Calcular el IVA que ya está incluido (16% del precio total)
+        # Para obtener el IVA de un precio que ya lo incluye: precio * 0.16 / 1.16
+        iva = costo_total * (0.16 / 1.16)
 
         # Crear registro de pago en la base de datos
         db_payment = Pago(
@@ -101,7 +137,7 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
             metodo_pago='card',
             iva_pago=iva,
             estado_pago='pending',  # Inicialmente pending
-            costo_total_pago=costo_total + iva,
+            costo_total_pago=costo_total,
             fecha_pago=datetime.utcnow(),
             id_usuario=usuario.id_usuario,
             id_tour=tour.id_tour
@@ -110,6 +146,9 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
         db.add(db_payment)
         await db.commit()
         await db.refresh(db_payment)
+
+        # Verificar el estado inicial del pago
+        await check_session_status(db, session.id)
 
         return PaymentResponse(
             session_id=session.id,
@@ -125,31 +164,20 @@ async def create_payment_session(db: AsyncSession, payment: PaymentCreate):
 
 async def get_payment_status(db: AsyncSession, session_id: str):
     try:
-        # Retrieve the session from Stripe
-        session = stripe.checkout.Session.retrieve(session_id)
+        # Verificar y actualizar el estado del pago
+        new_status = await check_session_status(db, session_id)
         
-        # Get the payment from our database
-        payment = await db.execute(
+        # Obtener el pago actualizado de la base de datos
+        result = await db.execute(
             select(Pago).where(Pago.stripe_session_id == session_id)
         )
-        db_payment = payment.scalar_one_or_none()
+        db_payment = result.scalar_one_or_none()
 
         if not db_payment:
             raise HTTPException(status_code=404, detail="Payment not found")
 
-        # Update payment status in database if it's different
-        if session.payment_status == 'paid' and db_payment.estado_pago == 'pending':
-            await db.execute(
-                update(Pago)
-                .where(Pago.stripe_session_id == session_id)
-                .values(estado_pago='completed')
-            )
-            await db.commit()
-            # Refresh the payment object to get updated status
-            await db.refresh(db_payment)
-
         return PaymentStatus(
-            status=db_payment.estado_pago,
+            status=new_status,
             amount=db_payment.costo_total_pago,
             currency='mxn',
             created_at=db_payment.fecha_pago
@@ -157,3 +185,5 @@ async def get_payment_status(db: AsyncSession, session_id: str):
 
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
