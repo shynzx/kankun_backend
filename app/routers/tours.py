@@ -45,4 +45,4 @@ async def add_servicio_to_tour(tour_id: int, servicio_data: AddServicioToTour, d
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Hubo un error: {str(e)}")

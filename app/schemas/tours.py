@@ -26,6 +26,7 @@ class TourUpdate(BaseModel):
 
 class TourResponse(TourBase):
     id_tour: int
+    servicios: List[ServicioResponse] = []
 
     class Config:
         from_attributes = True
