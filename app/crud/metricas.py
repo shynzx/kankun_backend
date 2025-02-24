@@ -1,13 +1,11 @@
+from app.schemas.metricas import cancelacionResponse, masReservadoResponse, IngresosResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import func
-from sqlalchemy.future import select
-from app.schemas.metricas import cancelacionResponse
 from app.models.reservas import Reserva
-from app.models.tours import Tour
 from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.tours import Tour
+from app.models.pagos import Pago
 from sqlalchemy.sql import func
-from app.schemas.metricas import masReservadoResponse
+from datetime import datetime
 from typing import List
 
 async def get_porcentaje_cancelaciones(db: AsyncSession):
@@ -37,3 +35,11 @@ async def get_tours_mas_reservados(db: AsyncSession, limit: int = 10) -> List[ma
 
     # Convert query result into Pydantic models
     return [masReservadoResponse(tour_id=row[0], tour_name=row[1], total_reservations=row[2]) for row in result.all()]
+
+async def get_ingresos_periodo(db: AsyncSession, fecha_inicio: datetime, fecha_fin: datetime):
+    result = await db.execute(
+        select(func.sum(Pago.costo_total_pago)).where(Pago.fecha_pago.between(fecha_inicio, fecha_fin))
+    )
+    sum_result = result.scalar()
+    result_float = float(sum_result or 0.0)
+    return IngresosResponse(ingresos_totales=result_float)
