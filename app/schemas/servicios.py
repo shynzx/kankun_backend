@@ -6,7 +6,7 @@ class ServicioBase(BaseModel):
     descripcion_servicio: str
     costo_servicio: float
     direccion_servicio: str = Field(..., max_length=255)
-    alimentos_servicio: List[str]
+    alimentos_servicio: Optional[bool] = False
     horario_servicio: str = Field(..., max_length=255)
     imagen_servicio: str = Field(..., max_length=255)
     restricciones_servicio: Optional[str] = None

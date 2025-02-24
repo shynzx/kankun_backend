@@ -8,6 +8,7 @@ class TourBase(BaseModel):
     dias_tour: int
     tipo_tour: str = Field(..., max_length=100)
     maxpersonas_tour: int
+    imagen_tour: str = Field(..., max_length=500)
     direccion_inicio_tour: str = Field(..., max_length=255)
     direccion_destino_tour: str = Field(..., max_length=255)
 
@@ -21,6 +22,7 @@ class TourUpdate(BaseModel):
     dias_tour: Optional[int] = None
     tipo_tour: Optional[str] = Field(None, max_length=100)
     maxpersonas_tour: Optional[int] = None
+    imagen_tour:Optional[str] = Field(None, max_length=500)
     direccion_inicio_tour: Optional[str] = Field(None, max_length=255)
     direccion_destino_tour: Optional[str] = Field(None, max_length=255)
 
@@ -30,3 +32,5 @@ class TourResponse(TourBase):
     class Config:
         from_attributes = True
 
+class AddServicioToTour(BaseModel):
+    id_servicio: int
