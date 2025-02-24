@@ -1,7 +1,10 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from app.models.servicios import Servicio
 from app.models.tours import Tour
-from app.schemas.tours import TourCreate, TourUpdate
+from app.schemas.tours import AddServicioToTour, TourCreate, TourUpdate
+from sqlalchemy.orm import selectinload
 import stripe
 import os
 
@@ -40,6 +43,7 @@ async def create_tour(db: AsyncSession, tour: TourCreate):
             maxpersonas_tour=tour.maxpersonas_tour,
             direccion_inicio_tour=tour.direccion_inicio_tour,
             direccion_destino_tour=tour.direccion_destino_tour,
+            imagen_tour = tour.imagen_tour,
             stripe_product_id=product.id,
             stripe_price_id=price.id
         )
@@ -110,7 +114,7 @@ async def delete_tour(db: AsyncSession, tour_id: int):
             raise HTTPException(status_code=400, detail=f"Error archiving Stripe product: {str(e)}")
     return False
 
-    async def add_servicio_to_tour(db: AsyncSession, tour_id: int, servicio_data: AddServicioToTour):
+async def add_servicio_to_tour(db: AsyncSession, tour_id: int, servicio_data: AddServicioToTour):
     result = await db.execute(
         select(Tour).options(selectinload(Tour.servicios)).filter(Tour.id_tour == tour_id)
     )
