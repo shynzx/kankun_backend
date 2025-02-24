@@ -14,6 +14,10 @@ async def get_tour(db: AsyncSession, tour_id: int):
     result = await db.execute(select(Tour).filter(Tour.id_tour == tour_id))
     return result.scalars().first()
 
+async def get_tour_with_services(db: AsyncSession, tour_id: int):
+    result = await db.execute(select(Tour).options(selectinload(Tour.servicios)).filter(Tour.id_tour == tour_id))
+    return result.scalars().first()
+
 async def get_tours(db: AsyncSession, skip: int = 0, limit: int = 100):
     result = await db.execute(select(Tour).offset(skip).limit(limit))
     return result.scalars().all()
