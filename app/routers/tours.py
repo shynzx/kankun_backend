@@ -36,3 +36,13 @@ async def delete_tour(tour_id: int, db: AsyncSession = Depends(get_session)):
     if not success:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return {"message": "Tour eliminado correctamente"}
+
+@router.post("/{tour_id}/servicios", response_model=TourResponse)
+async def add_servicio_to_tour(tour_id: int, servicio_data: AddServicioToTour, db: AsyncSession = Depends(get_session)):
+    try:
+        updated_tour = await tours_crud.add_servicio_to_tour(db, tour_id, servicio_data)
+        return updated_tour
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Hubo un error: {str(e)}")

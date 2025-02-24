@@ -109,3 +109,35 @@ async def delete_tour(db: AsyncSession, tour_id: int):
             await db.rollback()
             raise HTTPException(status_code=400, detail=f"Error archiving Stripe product: {str(e)}")
     return False
+
+    async def add_servicio_to_tour(db: AsyncSession, tour_id: int, servicio_data: AddServicioToTour):
+    result = await db.execute(
+        select(Tour).options(selectinload(Tour.servicios)).filter(Tour.id_tour == tour_id)
+    )
+    db_tour = result.scalars().first()
+
+    if not db_tour:
+        raise HTTPException(status_code=404, detail="Tour no encontrtado")
+
+    # Obtener el servicio
+    result = await db.execute(select(Servicio).filter(Servicio.id_servicio == servicio_data.id_servicio))
+    db_servicio = result.scalars().first()
+
+    if not db_servicio:
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+
+    # Verificar si el servicio ya está en el tour
+    if db_servicio in db_tour.servicios:
+        raise HTTPException(status_code=400, detail="El Servicio ya se encuentra en el Tour")
+
+    # Agregar el servicio al tour
+    db_tour.servicios.append(db_servicio)
+
+    try:
+        await db.commit()
+        await db.refresh(db_tour)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ocurrió un error al añadir el servicio: {str(e)}")
+
+    return db_tour
