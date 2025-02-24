@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text
+from sqlalchemy import Boolean, Column, Integer, String, Float, Text
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 from app.models.tour_servicio import tour_servicio
@@ -12,7 +12,7 @@ class Servicio(Base):
     descripcion_servicio = Column(Text, nullable=False)
     costo_servicio = Column(Float, nullable=False)
     direccion_servicio = Column(String(255), nullable=False)
-    alimentos_servicio = Column(ARRAY(String), nullable=False)
+    alimentos_servicio = Column(Boolean, default=False)
     horario_servicio = Column(String(255), nullable=False)
     imagen_servicio = Column(String(255), nullable=False)
     restricciones_servicio = Column(Text, nullable=True)

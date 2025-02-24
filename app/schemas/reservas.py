@@ -2,12 +2,14 @@ from pydantic import BaseModel
 from decimal import Decimal
 from typing import Optional
 
+from app.models.reservas import EstadoReserva
+
 class ReservaBase(BaseModel):
     id_usuario: int
     id_pago: int
     id_tour: int
     costo_reserva: Decimal
-    estatus: str
+    estado: EstadoReserva
 
 class ReservaCreate(ReservaBase):
     pass
