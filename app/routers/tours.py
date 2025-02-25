@@ -11,14 +11,14 @@ router = APIRouter(prefix='/tours', tags=['Tours'])
     200: {'description': 'Lista de tours obtenida exitosamente'},
     500: {'description': 'Error interno'}
 })
-async def get_tours_route(skip: int = 0, limit: int = 100):
+async def get_tours_route(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_session)):
     """
     Obtener la lista de tours.
     
     - **skip**: Número de registros a omitir.
     - **limit**: Número máximo de registros a retornar.
     """
-    tours = await get_tours(skip=skip, limit=limit)
+    tours = await get_tours(db, skip=skip, limit=limit)
     return [TourResponse(
         **tour.__dict__,
         servicio_ids=[servicio.id_servicio for servicio in tour.servicios]
@@ -29,13 +29,13 @@ async def get_tours_route(skip: int = 0, limit: int = 100):
     404: {'description': 'Tour no encontrado'},
     500: {'description': 'Error interno'}
 })
-async def get_tour_route(tour_id: int):
+async def get_tour_route(tour_id: int, db: AsyncSession = Depends(get_session)):
     """
     Obtener un tour por su ID.
     
     - **tour_id**: ID del tour a buscar.
     """
-    tour = await get_tour(tour_id)
+    tour = await get_tour(db, tour_id)
     if tour is None:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return TourResponse(
@@ -44,13 +44,13 @@ async def get_tour_route(tour_id: int):
     )
 
 @router.get("/{tour_id}/with-services", response_model=TourWithServicesResponse)
-async def get_tour_with_services_route(tour_id: int):
+async def get_tour_with_services_route(tour_id: int, db: AsyncSession = Depends(get_session)):
     """
     Obtener un tour con sus servicios asociados.
     
     - **tour_id**: ID del tour a buscar.
     """
-    tour = await get_tour_with_services(tour_id)
+    tour = await get_tour_with_services(db, tour_id)
     if tour is None:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return TourWithServicesResponse(
@@ -59,41 +59,41 @@ async def get_tour_with_services_route(tour_id: int):
     )
 
 @router.post("/", response_model=TourResponse)
-async def create_tour_route(tour: TourCreate):
+async def create_tour_route(tour: TourCreate, db: AsyncSession = Depends(get_session)):
     """
     Crear un nuevo tour.
     
     - **tour**: Datos del tour a crear.
     """
-    return await create_tour(tour)  
+    return await create_tour(db, tour)  
 
 @router.put("/{tour_id}", response_model=TourResponse)
-async def update_tour_route(tour_id: int, tour: TourUpdate):
+async def update_tour_route(tour_id: int, tour: TourUpdate, db: AsyncSession = Depends(get_session)):
     """
     Actualizar un tour existente.
     
     - **tour_id**: ID del tour a actualizar.
     - **tour**: Datos a modificar.
     """
-    updated_tour = await update_tour(tour_id, tour) 
+    updated_tour = await update_tour(db, tour_id, tour) 
     if updated_tour is None:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return updated_tour
 
 @router.delete("/{tour_id}")
-async def delete_tour_route(tour_id: int):
+async def delete_tour_route(tour_id: int, db: AsyncSession = Depends(get_session)):
     """
     Eliminar un tour por su ID.
     
     - **tour_id**: ID del tour a eliminar.
     """
-    success = await delete_tour(tour_id)  
+    success = await delete_tour(db, tour_id)  
     if not success:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return {"message": "Tour eliminado correctamente"}
 
 @router.post("/{tour_id}/servicios", response_model=TourResponse)
-async def add_servicio_to_tour_router(tour_id: int, servicio_data: AddServicioToTour):
+async def add_servicio_to_tour_router(tour_id: int, servicio_data: AddServicioToTour, db: AsyncSession = Depends(get_session)):
     """
     Agregar un servicio a un tour.
     
@@ -101,7 +101,7 @@ async def add_servicio_to_tour_router(tour_id: int, servicio_data: AddServicioTo
     - **servicio_data**: Datos del servicio a agregar.
     """
     try:
-        updated_tour = await add_servicio_to_tour(tour_id, servicio_data)
+        updated_tour = await add_servicio_to_tour(db, tour_id, servicio_data)
         return updated_tour
     except HTTPException as e:
         raise e
