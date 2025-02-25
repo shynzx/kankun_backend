@@ -7,10 +7,7 @@ from app.crud.tours import add_servicio_to_tour, create_tour, delete_tour, get_t
 
 router = APIRouter(prefix='/tours', tags=['Tours'])
 
-@router.get("/", response_model=List[TourResponse], resposnes={
-    200: {'description': 'Respuesta correcta'},
-    500: {'description': 'Error interno'}
-})
+@router.get("/", response_model=List[TourResponse])
 async def get_tours_route(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_session)):
     tours = await tours_crud.get_tours(db, skip=skip, limit=limit)
     return [TourResponse(
@@ -18,11 +15,7 @@ async def get_tours_route(skip: int = 0, limit: int = 100, db: AsyncSession = De
         servicio_ids=[servicio.id_servicio for servicio in tour.servicios]
     ) for tour in tours]
 
-@router.get("/{tour_id}", response_model=TourResponse, responses={
-    200: {'description': 'Respuesta correcta'},
-    404: {'description': 'Tour no encontrado'},
-    500: {'description': 'Error interno'}
-})
+@router.get("/{tour_id}", response_model=TourResponse)
 async def get_tour_route(tour_id: int, db: AsyncSession = Depends(get_session)):
     tour = await tours_crud.get_tour(db, tour_id)
     if tour is None:

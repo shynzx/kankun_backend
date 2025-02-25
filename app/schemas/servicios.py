@@ -24,9 +24,9 @@ class ServicioUpdate(BaseModel):
     imagen_servicio: Optional[str] = Field(None, max_length=255)
     restricciones_servicio: Optional[str] = None
 
-class ServicioResponse(ServicioBase):
+class ServicioResponse(BaseModel):
     id_servicio: int
-
+    nombre_servicio: str
     class Config:
         from_attributes = True
 

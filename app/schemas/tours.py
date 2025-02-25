@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from app.schemas.servicios import ServicioResponse
 
 class TourBase(BaseModel):
     nombre_tour: str = Field(..., max_length=255)
@@ -34,7 +35,7 @@ class TourResponse(TourBase):
         from_attributes = True
 
 class TourWithServicesResponse(TourResponse):
-    servicios: List[ServicioResponse] = []
+    servicios: List['ServicioResponse'] = []
 
 class AddServicioToTour(BaseModel):
     id_servicio: int
