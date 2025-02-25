@@ -13,6 +13,12 @@ async def get_reservas(
     limit: int = 100, 
     db: AsyncSession = Depends(get_session)
 ):
+    """
+    Obtener la lista de reservas.
+    
+    - **skip**: Número de registros a omitir.
+    - **limit**: Número máximo de registros a retornar.
+    """
     return await reservas_crud.get_reservas(db, skip=skip, limit=limit)
 
 @router.get("/{reserva_id}", response_model=ReservaResponse)
@@ -20,6 +26,11 @@ async def get_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session)
 ):
+    """
+    Obtener una reserva por su ID.
+    
+    - **reserva_id**: ID de la reserva.
+    """
     reserva = await reservas_crud.get_reserva(db, reserva_id)
     if reserva is None:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
@@ -30,6 +41,11 @@ async def create_reserva(
     reserva: ReservaCreate, 
     db: AsyncSession = Depends(get_session),
 ):
+    """
+    Crear una nueva reserva.
+    
+    - **reserva**: Datos de la reserva a crear.
+    """
     return await reservas_crud.create_reserva(db, reserva)
 
 @router.put("/{reserva_id}", response_model=ReservaResponse)
@@ -38,6 +54,12 @@ async def update_reserva(
     reserva: ReservaUpdate, 
     db: AsyncSession = Depends(get_session),
 ):
+    """
+    Actualizar una reserva existente.
+    
+    - **reserva_id**: ID de la reserva a actualizar.
+    - **reserva**: Datos a actualizar.
+    """
     updated_reserva = await reservas_crud.update_reserva(db, reserva_id, reserva)
     if updated_reserva is None:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
@@ -48,6 +70,11 @@ async def delete_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
 ):
+    """
+    Eliminar una reserva por su ID.
+    
+    - **reserva_id**: ID de la reserva a eliminar.
+    """
     success = await reservas_crud.delete_reserva(db, reserva_id)
     if not success:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
@@ -58,6 +85,11 @@ async def confirm_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
 ):
+    """
+    Confirmar una reserva por su ID.
+    
+    - **reserva_id**: ID de la reserva a confirmar.
+    """
     success = await reservas_crud.confirmar_reserva(db, reserva_id)
     if not success:
         raise HTTPException(status_code=400, detail="No se pudo confirmar la reserva")
@@ -68,6 +100,11 @@ async def cancel_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
 ):
+    """
+    Cancelar una reserva por su ID.
+    
+    - **reserva_id**: ID de la reserva a cancelar.
+    """
     success = await reservas_crud.cancelar_reserva(db, reserva_id)
     if not success:
         raise HTTPException(status_code=400, detail="No se pudo cancelar la reserva")
