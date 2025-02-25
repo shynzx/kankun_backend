@@ -21,7 +21,7 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "KanKunDB")
 
 # Crear conexión con la base de datos
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:asteroide-08@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_async_engine(DATABASE_URL, echo=True)
 
 # Crear sesión asíncrona
