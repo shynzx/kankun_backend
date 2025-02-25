@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.reservas import Reserva
-from app.schemas.reservas import ReservaCreate, ReservaUpdate
+from app.schemas.reservas import *
 
 async def get_reserva(db: AsyncSession, reserva_id: int):
     result = await db.execute(select(Reserva).filter(Reserva.id_reserva == reserva_id))
@@ -37,3 +37,20 @@ async def delete_reserva(db: AsyncSession, reserva_id: int):
         return True
     return False
 
+async def cancelar_reserva(db: AsyncSession, reserva_id: int):
+    db_reserva = await get_reserva(db, reserva_id)
+    if db_reserva:
+        db_reserva.estado = EstadoReserva.CANCELADO  # Cambiar el estado a "cancelado"
+        await db.commit()
+        await db.refresh(db_reserva)
+        return db_reserva
+    return None
+
+async def confirmar_reserva(db: AsyncSession, reserva_id: int):
+    db_reserva = await get_reserva(db, reserva_id)
+    if db_reserva:
+        db_reserva.estado = EstadoReserva.ACTIVO  # Cambiar el estado a "activo"
+        await db.commit()
+        await db.refresh(db_reserva)
+        return db_reserva
+    return None

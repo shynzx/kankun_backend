@@ -1,9 +1,9 @@
-from app.schemas.metricas import cancelacionResponse, masReservadoResponse, IngresosResponse
+from app.schemas.metricas import *
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.reservas import Reserva
+from app.models.reservas import *
 from sqlalchemy.future import select
-from app.models.tours import Tour
-from app.models.pagos import Pago
+from app.models.tours import *
+from app.models.pagos import *
 from sqlalchemy.sql import func
 from datetime import datetime
 from typing import List
@@ -11,18 +11,16 @@ from typing import List
 async def get_porcentaje_cancelaciones(db: AsyncSession):
     
     cancelado_result = await db.execute(
-        select(func.count()).where(Reserva.estatus == "cancelado")
+        select(func.count()).where(Reserva.estado == EstadoReserva.CANCELADO)  # Usa el Enum aquí
     )
     cancelado_count = cancelado_result.scalar() or 0  
 
-    
     total_result = await db.execute(select(func.count()).select_from(Reserva))
     total_count = total_result.scalar() or 1  
 
-    
     percentage = (cancelado_count / total_count) * 100
 
-    return [cancelacionResponse(reservasCanceladas= cancelado_count, reservasCanceladasPorcentaje=percentage, reservasTotal= total_count)]
+    return [cancelacionResponse(reservasCanceladas=cancelado_count, reservasCanceladasPorcentaje=percentage, reservasTotal=total_count)]
 
 async def get_tours_mas_reservados(db: AsyncSession, limit: int = 10) -> List[masReservadoResponse]:
     result = await db.execute(
