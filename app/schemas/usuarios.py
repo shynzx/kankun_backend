@@ -10,8 +10,9 @@ class UsuarioBase(BaseModel):
     nombre_usuario: str = Field(..., max_length=255)
     correo_usuario: EmailStr
     telefono_usuario: str = Field(..., max_length=20)
-    rol_usuario: RolUsuario
+    rol_usuario: RolUsuario = Field(default=RolUsuario.cliente)
     region_usuario: str = Field(..., max_length=100)
+    
 
 class crear_usuario(UsuarioBase):
     password_usuario: str = Field(..., min_length=6)

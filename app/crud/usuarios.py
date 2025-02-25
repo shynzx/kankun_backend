@@ -1,17 +1,14 @@
-from fastapi import HTTPException
+from http.client import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
+from app.models.usuarios import Usuario
+from app.schemas.usuarios import crear_usuario
 from passlib.context import CryptContext
 import stripe
 import os
 
-from app.models.usuarios import Usuario
-from app.schemas.usuarios import crear_usuario
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
-
 
 async def get_usuario_by_email(session: AsyncSession, correo_usuario: str):
     stmt = select(Usuario).where(Usuario.correo_usuario == correo_usuario)
@@ -48,7 +45,7 @@ async def create_usuario(db: AsyncSession, usuario: crear_usuario):
     except stripe.error.StripeError as e:
         # Si hay un error con Stripe, hacer rollback de la transacción
         await db.rollback()
-        raise HTTPException(status_code=400, detail=f"Error al crear el cliente de stripe: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error creating Stripe customer: {str(e)}")
     except Exception as e:
         await db.rollback()
         raise e
