@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.usuarios import Usuario

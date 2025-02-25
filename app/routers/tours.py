@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession  
 from typing import List
-from app.schemas.tours import AddServicioToTour, TourCreate, TourResponse, TourUpdate
+from app.schemas.tours import *
 from app.models.db_connect import get_session  
-from app.crud.tours import add_servicio_to_tour, create_tour, delete_tour, get_tour, get_tours, update_tour
+from app.crud.tours import *
 
 router = APIRouter(prefix='/tours', tags=['Tours'])
 
 @router.get("/", response_model=List[TourResponse])
 async def get_tours_route(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_session)):
-    tours = await tours_crud.get_tours(db, skip=skip, limit=limit)
+    tours = await get_tours(db, skip=skip, limit=limit)
     return [TourResponse(
         **tour.__dict__,
         servicio_ids=[servicio.id_servicio for servicio in tour.servicios]
@@ -17,7 +17,7 @@ async def get_tours_route(skip: int = 0, limit: int = 100, db: AsyncSession = De
 
 @router.get("/{tour_id}", response_model=TourResponse)
 async def get_tour_route(tour_id: int, db: AsyncSession = Depends(get_session)):
-    tour = await tours_crud.get_tour(db, tour_id)
+    tour = await get_tour(db, tour_id)
     if tour is None:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return TourResponse(
@@ -27,13 +27,12 @@ async def get_tour_route(tour_id: int, db: AsyncSession = Depends(get_session)):
 
 @router.get("/{tour_id}/with-services", response_model=TourWithServicesResponse)
 async def get_tour_with_services_route(tour_id: int, db: AsyncSession = Depends(get_session)):
-    tour = await tours_crud.get_tour_with_services(db, tour_id)
+    tour = await get_tour_with_services(db, tour_id)
     if tour is None:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
     return TourWithServicesResponse(
         **tour.__dict__,
         servicio_ids=[servicio.id_servicio for servicio in tour.servicios],
-        servicios=tour.servicios
     )
 
 @router.post("/", response_model=TourResponse)

@@ -27,10 +27,12 @@ def mensaje_root():
     return {
         "msg": "El servidor esta funcionando."
     }
+
 app.include_router(reservas.router)
 app.include_router(tours.router)
 app.include_router(auth.router)
-app.include_router(usuarios.router)
+app.include_router(usuarios.router,
+                   responses={422: {"description": "inserte campos validos, por favor"}})
 app.include_router(servicios.router)
 app.include_router(reservas.router)
 app.include_router(payments.router)

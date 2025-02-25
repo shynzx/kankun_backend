@@ -58,7 +58,7 @@ async def confirm_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
 ):
-    success = await reservas_crud.confirm_reservation(db, reserva_id)
+    success = await reservas_crud.confirmar_reserva(db, reserva_id)
     if not success:
         raise HTTPException(status_code=400, detail="No se pudo confirmar la reserva")
     return {"message": "Reserva confirmada correctamente"}
@@ -68,7 +68,7 @@ async def cancel_reserva(
     reserva_id: int, 
     db: AsyncSession = Depends(get_session),
 ):
-    success = await reservas_crud.cancel_reservation(db, reserva_id)
+    success = await reservas_crud.cancelar_reserva(db, reserva_id)
     if not success:
         raise HTTPException(status_code=400, detail="No se pudo cancelar la reserva")
     return {"message": "Reserva cancelada correctamente"}
