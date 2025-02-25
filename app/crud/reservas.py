@@ -4,7 +4,7 @@ from app.models.reservas import Reserva
 from app.schemas.reservas import ReservaCreate, ReservaUpdate
 
 async def get_reserva(db: AsyncSession, reserva_id: int):
-    result = await db.execute(select(Reserva).filter(Reserva.id_servicio == reserva_id))
+    result = await db.execute(select(Reserva).filter(Reserva.id_reserva == reserva_id))
     return result.scalar_one_or_none()
 
 async def get_reservas(db: AsyncSession, skip: int = 0, limit: int = 100):

@@ -6,6 +6,8 @@ from .routers import usuarios
 from .routers import servicios
 from .routers import reservas
 from .routers import payments
+from .routers import metricas
+from .routers import tickets
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -34,3 +36,5 @@ app.include_router(usuarios.router,
 app.include_router(servicios.router)
 app.include_router(reservas.router)
 app.include_router(payments.router)
+app.include_router(metricas.router)
+app.include_router(tickets.router)
