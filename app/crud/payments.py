@@ -9,7 +9,9 @@ from app.schemas.payments import (
     CustomerCreate,
     PriceResponse,
     PriceCreate,
-    ApiResponse
+    ApiResponse,
+    RefundCreate,
+    RefundResponse
 )
 from app.models.pagos import Pago
 from app.models.usuarios import Usuario
@@ -77,13 +79,13 @@ async def check_session_status(db: AsyncSession, session_id: str):
         
         # Mapear estados de Stripe a nuestros estados
         stripe_to_db_status = {
-            'paid': 'completed',
-            'unpaid': 'pending',
-            'canceled': 'cancelled',
-            'expired': 'failed'
+            'paid': 'completado',
+            'unpaid': 'pendiente',
+            'canceled': 'cancelado',
+            'expired': 'fallido'
         }
         
-        new_status = stripe_to_db_status.get(payment_status, 'pending')
+        new_status = stripe_to_db_status.get(payment_status, 'pendiente')
         await update_payment_status(db, session_id, new_status)
         
         return new_status
@@ -181,6 +183,45 @@ async def get_payment_status(db: AsyncSession, session_id: str):
             amount=db_payment.costo_total_pago,
             currency='mxn',
             created_at=db_payment.fecha_pago
+        )
+
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def refund_payment(db: AsyncSession, refund_data: RefundCreate):
+    try:
+        # Obtener el pago de la base de datos
+        result = await db.execute(
+            select(Pago).where(Pago.stripe_session_id == refund_data.payment_id)
+        )
+        db_payment = result.scalar_one_or_none()
+
+        if not db_payment:
+            raise HTTPException(status_code=404, detail="Pago no encontrado")
+
+        if db_payment.estado_pago != 'completado':
+            raise HTTPException(status_code=400, detail="Solo se pueden reembolsar pagos completados")
+
+        # Obtener la sesión de Stripe
+        session = stripe.checkout.Session.retrieve(refund_data.payment_id)
+        payment_intent = session.payment_intent
+
+        # Crear el reembolso en Stripe
+        refund = stripe.Refund.create(
+            payment_intent=payment_intent,
+            reason=refund_data.reason if refund_data.reason else 'requested_by_customer'
+        )
+
+        # Actualizar el estado del pago en la base de datos
+        await update_payment_status(db, refund_data.payment_id, 'reembolsado')
+
+        return RefundResponse(
+            refund_id=refund.id,
+            amount=float(refund.amount) / 100,  # Convertir de centavos a la moneda base
+            status=refund.status,
+            created_at=datetime.fromtimestamp(refund.created)
         )
 
     except stripe.error.StripeError as e:

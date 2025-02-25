@@ -37,6 +37,16 @@ class PaymentStatus(BaseModel):
     currency: str
     created_at: datetime
 
+class RefundCreate(BaseModel):
+    payment_id: str = Field(..., description="ID de la sesión de pago a reembolsar")
+    reason: Optional[str] = Field(None, description="Razón del reembolso")
+
+class RefundResponse(BaseModel):
+    refund_id: str
+    amount: float
+    status: str
+    created_at: datetime
+
 class ApiResponse(BaseModel):
     success: bool
     data: Optional[dict] = None
