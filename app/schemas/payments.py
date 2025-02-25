@@ -38,8 +38,7 @@ class PaymentStatus(BaseModel):
     created_at: datetime
 
 class RefundCreate(BaseModel):
-    payment_id: str = Field(..., description="ID de la sesión de pago a reembolsar")
-    reason: Optional[str] = Field(None, description="Razón del reembolso")
+    stripe_session_id: str
 
 class RefundResponse(BaseModel):
     refund_id: str

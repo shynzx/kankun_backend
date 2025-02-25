@@ -194,7 +194,7 @@ async def refund_payment(db: AsyncSession, refund_data: RefundCreate):
     try:
         # Obtener el pago de la base de datos
         result = await db.execute(
-            select(Pago).where(Pago.stripe_session_id == refund_data.payment_id)
+            select(Pago).where(Pago.stripe_session_id == refund_data.stripe_session_id)
         )
         db_payment = result.scalar_one_or_none()
 
@@ -205,17 +205,17 @@ async def refund_payment(db: AsyncSession, refund_data: RefundCreate):
             raise HTTPException(status_code=400, detail="Solo se pueden reembolsar pagos completados")
 
         # Obtener la sesión de Stripe
-        session = stripe.checkout.Session.retrieve(refund_data.payment_id)
+        session = stripe.checkout.Session.retrieve(refund_data.stripe_session_id)
         payment_intent = session.payment_intent
 
         # Crear el reembolso en Stripe
         refund = stripe.Refund.create(
             payment_intent=payment_intent,
-            reason=refund_data.reason if refund_data.reason else 'requested_by_customer'
+            reason='requested_by_customer'
         )
 
         # Actualizar el estado del pago en la base de datos
-        await update_payment_status(db, refund_data.payment_id, 'reembolsado')
+        await update_payment_status(db, refund_data.stripe_session_id, 'reembolsado')
 
         return RefundResponse(
             refund_id=refund.id,

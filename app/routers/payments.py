@@ -66,7 +66,7 @@ async def get_payment_status(
     - **session_id**: ID de la sesión de pago de Stripe
     
     Devuelve:
-    - **status**: Estado actual del pago ('pendiente', 'completado', 'fallido', 'cancelado', 'reembolsado')
+    - **status**: Estado actual del pago ('pending', 'completed', 'failed', 'cancelled')
     - **amount**: Monto total del pago
     - **currency**: Moneda del pago
     - **created_at**: Fecha y hora de creación del pago
@@ -85,20 +85,19 @@ async def get_payment_status(
             message="Error al obtener el estado del pago"
         )
 
-@router.post("/payments/{payment_id}/refund", response_model=ApiResponse,
+@router.post("/payments/refund", response_model=ApiResponse,
     summary="Reembolsar un pago",
     response_description="Información del reembolso procesado"
 )
 async def refund_payment(
-    payment_id: str,
     refund_data: RefundCreate,
     db: AsyncSession = Depends(get_session)
 ):
     """
-    Procesa el reembolso de un pago completado:
-
-    - **payment_id**: ID de la sesión de pago a reembolsar ("stripe_session_id" en la tabla "Pagos")
-    - **reason**: (Opcional) Razón del reembolso
+    Procesa el reembolso de un pago completado.
+    
+    Request body:
+    - **stripe_session_id**: ID de la sesión de pago de Stripe
     
     El proceso realiza las siguientes acciones:
     1. Verifica que el pago exista y esté completado
@@ -117,7 +116,7 @@ async def refund_payment(
     - 400: Error al procesar el reembolso en Stripe
     """
     try:
-        result = await payments_crud.refund_payment(db, RefundCreate(payment_id=payment_id, reason=refund_data.reason))
+        result = await payments_crud.refund_payment(db, refund_data)
         return ApiResponse(
             success=True,
             data=result.dict(),
