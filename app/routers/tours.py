@@ -7,17 +7,41 @@ from app.crud.tours import add_servicio_to_tour, create_tour, delete_tour, get_t
 
 router = APIRouter(prefix='/tours', tags=['Tours'])
 
-@router.get("/", response_model=List[TourResponse])
+@router.get("/", response_model=List[TourResponse], resposnes={
+    200: {'description': 'Respuesta correcta'},
+    500: {'description': 'Error interno'}
+})
 async def get_tours_route(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_session)):
-    tours = await get_tours(db, skip=skip, limit=limit)  
-    return tours
+    tours = await tours_crud.get_tours(db, skip=skip, limit=limit)
+    return [TourResponse(
+        **tour.__dict__,
+        servicio_ids=[servicio.id_servicio for servicio in tour.servicios]
+    ) for tour in tours]
 
-@router.get("/{tour_id}", response_model=TourResponse)
+@router.get("/{tour_id}", response_model=TourResponse, responses={
+    200: {'description': 'Respuesta correcta'},
+    404: {'description': 'Tour no encontrado'},
+    500: {'description': 'Error interno'}
+})
 async def get_tour_route(tour_id: int, db: AsyncSession = Depends(get_session)):
-    tour = await get_tour(db, tour_id)  
+    tour = await tours_crud.get_tour(db, tour_id)
     if tour is None:
         raise HTTPException(status_code=404, detail="Tour no encontrado")
-    return tour
+    return TourResponse(
+        **tour.__dict__,
+        servicio_ids=[servicio.id_servicio for servicio in tour.servicios]
+    )
+
+@router.get("/{tour_id}/with-services", response_model=TourWithServicesResponse)
+async def get_tour_with_services_route(tour_id: int, db: AsyncSession = Depends(get_session)):
+    tour = await tours_crud.get_tour_with_services(db, tour_id)
+    if tour is None:
+        raise HTTPException(status_code=404, detail="Tour no encontrado")
+    return TourWithServicesResponse(
+        **tour.__dict__,
+        servicio_ids=[servicio.id_servicio for servicio in tour.servicios],
+        servicios=tour.servicios
+    )
 
 @router.post("/", response_model=TourResponse)
 async def create_tour_route(tour: TourCreate, db: AsyncSession = Depends(get_session)):
@@ -45,4 +69,4 @@ async def add_servicio_to_tour_router(tour_id: int, servicio_data: AddServicioTo
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Hubo un error: {str(e)}")

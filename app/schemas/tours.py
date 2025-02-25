@@ -28,9 +28,13 @@ class TourUpdate(BaseModel):
 
 class TourResponse(TourBase):
     id_tour: int
+    servicio_ids: List[int] = []
 
     class Config:
         from_attributes = True
+
+class TourWithServicesResponse(TourResponse):
+    servicios: List[ServicioResponse] = []
 
 class AddServicioToTour(BaseModel):
     id_servicio: int
