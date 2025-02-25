@@ -1,11 +1,11 @@
 from datetime import timedelta
+import os
 from typing import Annotated
 from jose import jwt
 
 from sqlalchemy.future import select
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
 import requests
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,23 +13,33 @@ from app.crud.auth import create_token, authenticate_user, RoleChecker, get_curr
 from app.models.usuarios import RolUsuario, Usuario
 from app.schemas.auth import Login, Token, auth_response
 from app.models.db_connect import get_session
-from pydantic import BaseModel
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 20
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_MINUTES = 120
-GOOGLE_CLIENT_ID = "aqui va el id"
-GOOGLE_CLIENT_SECRET = "aqui van los secrets"
-GOOGLE_REDIRECT_URI = "aqui va la uri"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
 refresh_tokens = []
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+admin_rutas = RoleChecker([RolUsuario.admin]) #define los roles que va a aceptar el role checker
+cliente_rutas = RoleChecker([RolUsuario.cliente])
+ambos = RoleChecker([RolUsuario.cliente, RolUsuario.admin])
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/auth")
 
 router = APIRouter(prefix='/login', tags=['auth'])
 
+@router.get("/dashboard", dependencies=[Depends(admin_rutas)], summary="Endpoint RBAC de prueba")
+async def admin_dashboard():
+    """
+    Prueba de RBAC, este endpoint solo sirve para hacer pruebas de RBAC,
+    """
+    return {"msg": "Bienvenido al panel de administración"}
+
 @router.post("/auth", response_model=auth_response, summary="Crea un nuevo token",response_description="Los tokens con la información de la sesión",)
 async def login_for_access_token(
-    form_data: Annotated[Login, Query()],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(get_session)],
 ):
     """
@@ -39,7 +49,7 @@ async def login_for_access_token(
     - **contraseña**: contraseña del usuario registrado
     
     """
-    user = await authenticate_user(session, form_data.correo, form_data.contraseña)
+    user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
@@ -52,7 +62,9 @@ async def login_for_access_token(
     refresh_tokens.append(refresh_token)
     return auth_response(access_token=access_token, refresh_token=refresh_token)
 
-@router.post("/refreshToken", response_model=Token)
+
+
+@router.post("/refreshToken", response_model=Token, summary="Refresca la sesion")
 async def refresh_access_token(token_data: Annotated[tuple[Usuario, str], Depends(get_current_user)]):
     user, token = token_data
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -60,21 +72,29 @@ async def refresh_access_token(token_data: Annotated[tuple[Usuario, str], Depend
 
     access_token = create_token(data={"sub": user.correo_usuario, "role": user.rol_usuario}, expires_delta=access_token_expires)
     refresh_token = create_token(data={"sub": user.correo_usuario, "role": user.rol_usuario}, expires_delta=refresh_token_expires)
-
+    """
+    no implementado(solo refresca la sesion)
+    """
     refresh_tokens.remove(token)
     refresh_tokens.append(refresh_token)
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 #-----google_auth-----
 
-@router.get("/login_google")
+@router.get("/login_google", summary="Regresa una url de redireccionamiento a google/auth")
 async def login_google():
+    """
+    regresa la url para el registro con google
+    """
     return {
         "url": f"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={GOOGLE_REDIRECT_URI}&scope=openid%20profile%20email&access_type=offline"
     }
 
-@router.get("/auth/google")
+@router.get("/auth/google",summary="El usuario podra seleccionar su cuenta y poderse registrar en la aplicacion")
 async def auth_google(code: str,db: AsyncSession = Depends(get_session)):
+    """
+    NO USAR: esta ruta es implementada para que la api de google pueda regresar el token con la informacion de la sesion
+    """
     token_url = "https://accounts.google.com/o/oauth2/token"
     data = {
         "code": code,
@@ -102,16 +122,14 @@ async def auth_google(code: str,db: AsyncSession = Depends(get_session)):
     email = user_data["email"]
     nombre = user_data["name"]
 
-    # Verificar si el usuario ya existe
     result = await db.execute(select(Usuario).where(Usuario.correo_usuario == email))
     usuario = result.scalars().first()
 
     if not usuario:
-        # Crear usuario con rol "cliente" por defecto
         nuevo_usuario = Usuario(
             nombre_usuario=nombre,
             correo_usuario=email,
-            rol_usuario=RolUsuario.cliente,  # Asignar correctamente el Enum
+            rol_usuario=RolUsuario.cliente,
             region_usuario="default"
         )
         db.add(nuevo_usuario)
@@ -121,6 +139,9 @@ async def auth_google(code: str,db: AsyncSession = Depends(get_session)):
 
     return {"usuario": usuario.correo_usuario, "rol": usuario.rol_usuario.value}
 
-@router.get("/token")
+@router.get("/token", summary="Token para google/auth")
 async def get_token(token: str = Depends(oauth2_scheme)):
+    """
+    NO USAR: esta ruta es implementada para la llamada de la ruta google/auth
+    """
     return jwt.decode(token, GOOGLE_CLIENT_SECRET, algorithms=["HS256"])

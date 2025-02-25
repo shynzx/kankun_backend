@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from app.models.usuarios import RolUsuario
+
 class Login(BaseModel):
    correo: str = Field(description="Correo requerido para buscar el usuario en la base de datos")
    contraseña: str = Field(description="Contraseña del usuario")
@@ -7,6 +9,7 @@ class Login(BaseModel):
 class Token(BaseModel):
   access_token: str | None = Field(description="Token para almacenar la informacion de la sesión")
   refresh_token: str | None = Field(description="Token para refrescar")
+  
 
 class auth_response(Token):
     pass
