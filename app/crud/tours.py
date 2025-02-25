@@ -3,22 +3,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.servicios import Servicio
 from app.models.tours import Tour
-from app.schemas.tours import AddServicioToTour, TourCreate, TourUpdate
+from app.schemas.tours import AddServicioToTour, TourCreate, TourUpdate, TourResponse, TourWithServicesResponse
 from sqlalchemy.orm import selectinload
+from typing import List
 
-async def get_tour(db: AsyncSession, tour_id: int):
-    result = await db.execute(select(Tour).filter(Tour.id_tour == tour_id))
-    return result.scalars().first()
-
-async def get_tour_with_services(db: AsyncSession, tour_id: int):
+async def get_tour(db: AsyncSession, tour_id: int) -> Tour:
     result = await db.execute(select(Tour).options(selectinload(Tour.servicios)).filter(Tour.id_tour == tour_id))
     return result.scalars().first()
 
-async def get_tours(db: AsyncSession, skip: int = 0, limit: int = 100):
-    result = await db.execute(select(Tour).offset(skip).limit(limit))
+async def get_tour_with_services(db: AsyncSession, tour_id: int) -> Tour:
+    result = await db.execute(select(Tour).options(selectinload(Tour.servicios)).filter(Tour.id_tour == tour_id))
+    return result.scalars().first()
+
+async def get_tours(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[Tour]:
+    result = await db.execute(select(Tour).options(selectinload(Tour.servicios)).offset(skip).limit(limit))
     return result.scalars().all()
 
-async def create_tour(db: AsyncSession, tour: TourCreate):
+async def create_tour(db: AsyncSession, tour: TourCreate) -> Tour:
     try:
         db_tour = Tour(
             nombre_tour=tour.nombre_tour,
@@ -41,7 +42,7 @@ async def create_tour(db: AsyncSession, tour: TourCreate):
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al crear el tour: {str(e)}")
 
-async def update_tour(db: AsyncSession, tour_id: int, tour: TourUpdate):
+async def update_tour(db: AsyncSession, tour_id: int, tour: TourUpdate) -> Tour:
     try:
         db_tour = await get_tour(db, tour_id)
         if not db_tour:
@@ -61,7 +62,7 @@ async def update_tour(db: AsyncSession, tour_id: int, tour: TourUpdate):
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al actualizar el tour: {str(e)}")
 
-async def delete_tour(db: AsyncSession, tour_id: int):
+async def delete_tour(db: AsyncSession, tour_id: int) -> bool:
     try:
         db_tour = await get_tour(db, tour_id)
         if not db_tour:
@@ -77,13 +78,9 @@ async def delete_tour(db: AsyncSession, tour_id: int):
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar el tour: {str(e)}")
 
-async def add_servicio_to_tour(db: AsyncSession, tour_id: int, servicio_data: AddServicioToTour):
+async def add_servicio_to_tour(db: AsyncSession, tour_id: int, servicio_data: AddServicioToTour) -> Tour:
     try:
-        result = await db.execute(
-            select(Tour).options(selectinload(Tour.servicios)).filter(Tour.id_tour == tour_id)
-        )
-        db_tour = result.scalars().first()
-
+        db_tour = await get_tour(db, tour_id)
         if not db_tour:
             raise HTTPException(status_code=404, detail="Tour no encontrado")
 
