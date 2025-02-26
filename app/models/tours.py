@@ -16,9 +16,8 @@ class Tour(Base):
     direccion_inicio_tour = Column(String, nullable=False)
     direccion_destino_tour = Column(String, nullable=False)
     imagen_tour = Column(String, nullable=True, default="https://ralfvanveen.com/wp-content/uploads/2021/06/Placeholder-_-Glossary.svg")
-    stripe_product_id = Column(String, unique=True)  # ID de producto de Stripe
-    stripe_price_id = Column(String, unique=True)    # ID de precio de Stripe
     
-    # Relaciones
+    # Relationships
     servicios = relationship("Servicio", secondary=tour_servicio, back_populates="tours")
     pagos = relationship("Pago", back_populates="tour")
+    reservas = relationship("Reserva", back_populates="tour")

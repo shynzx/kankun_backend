@@ -1,7 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from app.models.reservas import Reserva
+from app.models.tours import Tour
 from app.schemas.reservas import *
+import stripe
+import os
+from decimal import Decimal
+
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+IVA_RATE = Decimal('0.16')  # 16% IVA rate
 
 async def get_reserva(db: AsyncSession, reserva_id: int):
     result = await db.execute(select(Reserva).filter(Reserva.id_reserva == reserva_id))
@@ -11,13 +19,72 @@ async def get_reservas(db: AsyncSession, skip: int = 0, limit: int = 100):
     result = await db.execute(select(Reserva).offset(skip).limit(limit))
     return result.scalars().all()
 
+async def calculate_total_cost(tour: Tour) -> Decimal:
+    # Calculate tour cost
+    total_cost = Decimal(str(tour.costo_tour))
+    
+    # Add services cost
+    for service in tour.servicios:
+        total_cost += Decimal(str(service.costo_servicio))
+    
+    # Add IVA
+    total_cost_with_iva = total_cost * (1 + IVA_RATE)
+    
+    return total_cost_with_iva.quantize(Decimal('0.01'))  # Redondear a 2 decimales
 
 async def create_reserva(db: AsyncSession, reserva: ReservaCreate):
-    db_reserva = Reserva(**reserva.dict())
-    db.add(db_reserva)
-    await db.commit()
-    await db.refresh(db_reserva)
-    return db_reserva
+    try:
+        # Get tour information with services
+        tour_result = await db.execute(
+            select(Tour)
+            .options(joinedload(Tour.servicios))
+            .filter(Tour.id_tour == reserva.id_tour)
+        )
+        tour = tour_result.unique().scalar_one_or_none()
+        
+        if not tour:
+            raise ValueError("Tour not found")
+
+        # Calculate total cost including services and IVA
+        total_cost = await calculate_total_cost(tour)
+
+        # Create Stripe product with complete description
+        services_description = ", ".join([s.nombre_servicio for s in tour.servicios])
+        product_description = f"Tour: {tour.nombre_tour}\nServicios incluidos: {services_description}\nIVA incluido"
+        
+        product = stripe.Product.create(
+            name=f"Reserva para {tour.nombre_tour}",
+            description=product_description
+        )
+        
+        # Create Stripe price with total cost
+        price = stripe.Price.create(
+            product=product.id,
+            unit_amount=int(float(total_cost) * 100),  # Convert to cents
+            currency="mxn"
+        )
+        
+        # Create reservation in database
+        db_reserva = Reserva(
+            id_usuario=reserva.id_usuario,
+            id_tour=reserva.id_tour,
+            costo_reserva=total_cost,  # Save total cost including services and IVA
+            estado=reserva.estado,
+            stripe_product_id=product.id,
+            stripe_price_id=price.id
+        )
+        
+        db.add(db_reserva)
+        await db.commit()
+        await db.refresh(db_reserva)
+        return db_reserva
+        
+    except Exception as e:
+        await db.rollback()
+        # Clean up Stripe resources if database operation fails
+        if 'product' in locals():
+            stripe.Product.delete(product.id)
+        raise e
 
 async def update_reserva(db: AsyncSession, reserva_id: int, reserva: ReservaUpdate):
     db_reserva = await get_reserva(db, reserva_id)
@@ -32,6 +99,10 @@ async def update_reserva(db: AsyncSession, reserva_id: int, reserva: ReservaUpda
 async def delete_reserva(db: AsyncSession, reserva_id: int):
     db_reserva = await get_reserva(db, reserva_id)
     if db_reserva:
+        # Delete Stripe product and price
+        if db_reserva.stripe_product_id:
+            stripe.Product.delete(db_reserva.stripe_product_id)
+        
         await db.delete(db_reserva)
         await db.commit()
         return True
@@ -40,7 +111,15 @@ async def delete_reserva(db: AsyncSession, reserva_id: int):
 async def cancelar_reserva(db: AsyncSession, reserva_id: int):
     db_reserva = await get_reserva(db, reserva_id)
     if db_reserva:
-        db_reserva.estado = EstadoReserva.CANCELADO  # Cambiar el estado a "cancelado"
+        db_reserva.estado = EstadoReserva.CANCELADO
+        
+        # Archive the Stripe product
+        if db_reserva.stripe_product_id:
+            stripe.Product.modify(
+                db_reserva.stripe_product_id,
+                active=False
+            )
+        
         await db.commit()
         await db.refresh(db_reserva)
         return db_reserva
@@ -49,7 +128,7 @@ async def cancelar_reserva(db: AsyncSession, reserva_id: int):
 async def confirmar_reserva(db: AsyncSession, reserva_id: int):
     db_reserva = await get_reserva(db, reserva_id)
     if db_reserva:
-        db_reserva.estado = EstadoReserva.ACTIVO  # Cambiar el estado a "activo"
+        db_reserva.estado = EstadoReserva.ACTIVO
         await db.commit()
         await db.refresh(db_reserva)
         return db_reserva
