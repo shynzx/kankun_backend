@@ -13,7 +13,8 @@ class Reserva(Base):
     
     id_reserva = Column(Integer, primary_key=True, autoincrement=True)
     id_usuario = Column(Integer, ForeignKey('usuarios.id_usuario'), nullable=False)
-    id_pago = Column(Integer, ForeignKey('pagos.id_pago'), nullable=False)
     id_tour = Column(Integer, ForeignKey('tours.id_tour'), nullable=False)
     costo_reserva = Column(Numeric(10, 2), nullable=False)
     estado = Column(Enum(EstadoReserva), nullable=False)
+    stripe_product_id = Column(String, unique=True)
+    stripe_price_id = Column(String, unique=True)
