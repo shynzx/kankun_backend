@@ -8,17 +8,20 @@ from datetime import datetime
 from app.models.pagos import Pago
 from app.models.reservas import Reserva
 from app.models.usuarios import Usuario
+from app.models.tours import Tour
 from app.schemas.payments import CreatePaymentSession, PaymentResponse
 from decimal import Decimal
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
-IVA_RATE = 0.16  # 16% IVA rate
 
 async def create_payment_session(db: AsyncSession, payment_data: CreatePaymentSession):
-    # Get reservation details with related user
+    # Get reservation details with related user and tour
     result = await db.execute(
         select(Reserva)
-        .options(joinedload(Reserva.usuario))
+        .options(
+            joinedload(Reserva.usuario),
+            joinedload(Reserva.tour).joinedload(Tour.servicios)
+        )
         .filter(Reserva.id_reserva == payment_data.id_reserva)
     )
     reservation = result.unique().scalar_one_or_none()
@@ -49,20 +52,15 @@ async def create_payment_session(db: AsyncSession, payment_data: CreatePaymentSe
             cancel_url=payment_data.cancel_url,
         )
 
-        # Calculate total and IVA
-        subtotal = float(reservation.costo_reserva)
-        iva = subtotal * IVA_RATE
-        total = subtotal + iva
-
-        # Create payment record
+        # Create payment record with the total cost from reservation
         payment = Pago(
             stripe_session_id=session.id,
             stripe_customer_id=reservation.usuario.stripe_customer_id,
             stripe_price_id=reservation.stripe_price_id,
             metodo_pago='card',
-            iva_pago=iva,
+            iva_pago=float(reservation.costo_reserva) * 0.16,  # IVA component
             estado_pago='pending',
-            costo_total_pago=total,
+            costo_total_pago=float(reservation.costo_reserva),  # Total cost including IVA
             fecha_pago=datetime.utcnow(),
             id_usuario=reservation.id_usuario,
             id_tour=reservation.id_tour
