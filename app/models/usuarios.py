@@ -18,5 +18,6 @@ class Usuario(Base):
     region_usuario = Column(String, nullable=False)
     stripe_customer_id = Column(String, unique=True)  # ID de cliente de Stripe
     
-    # Relaciones
+    # Relationships
     pagos = relationship("Pago", back_populates="usuario")
+    reservas = relationship("Reserva", back_populates="usuario")

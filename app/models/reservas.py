@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Enum
+from sqlalchemy.orm import relationship
 from app.models.base import Base
 import enum
 
@@ -18,3 +19,7 @@ class Reserva(Base):
     estado = Column(Enum(EstadoReserva), nullable=False)
     stripe_product_id = Column(String, unique=True)
     stripe_price_id = Column(String, unique=True)
+
+    # Add relationships
+    usuario = relationship("Usuario", back_populates="reservas")
+    tour = relationship("Tour", back_populates="reservas")

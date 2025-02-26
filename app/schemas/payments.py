@@ -1,53 +1,29 @@
-from pydantic import BaseModel, Field, EmailStr
-from typing import Optional
+from pydantic import BaseModel
 from datetime import datetime
+from decimal import Decimal
+from typing import Optional
 
-class CustomerCreate(BaseModel):
-    name: str
-    email: EmailStr
+class CreatePaymentSession(BaseModel):
+    id_reserva: int
+    success_url: str 
+    cancel_url: str
 
-class CustomerResponse(BaseModel):
-    customer_id: str
-    email: str
-    name: str
-
-class PriceCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    amount: float
-    currency: str = "mxn"
-
-class PriceResponse(BaseModel):
-    price_id: str
-    product_id: str
-    amount: float
-    currency: str
-
-class PaymentCreate(BaseModel):
+class PaymentResponse(BaseModel):
+    id_pago: int
+    stripe_session_id: str
+    stripe_customer_id: str
+    stripe_price_id: str
+    metodo_pago: str
+    iva_pago: float
+    estado_pago: str
+    costo_total_pago: float
+    fecha_pago: datetime
     id_usuario: int
     id_tour: int
 
-class PaymentResponse(BaseModel):
-    session_id: str
-    checkout_url: str
+    class Config:
+        from_attributes = True
 
-class PaymentStatus(BaseModel):
-    status: str
-    amount: float
-    currency: str
-    created_at: datetime
-
-class RefundCreate(BaseModel):
-    stripe_session_id: str
-
-class RefundResponse(BaseModel):
-    refund_id: str
-    amount: float
-    status: str
-    created_at: datetime
-
-class ApiResponse(BaseModel):
-    success: bool
-    data: Optional[dict] = None
-    message: str
-    error: Optional[dict] = None
+class RefundRequest(BaseModel):
+    id_pago: int
+    reason: Optional[str] = None
