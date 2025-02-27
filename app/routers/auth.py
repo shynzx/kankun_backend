@@ -136,12 +136,15 @@ async def auth_google(code: str,db: AsyncSession = Depends(get_session)):
         await db.commit()
         await db.refresh(nuevo_usuario)
         usuario = nuevo_usuario
+    
+    access_token = create_token(
+        data={"sub": usuario.correo_usuario, "role": usuario.rol_usuario.value},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
 
-    return {"usuario": usuario.correo_usuario, "rol": usuario.rol_usuario.value}
+    return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/token", summary="Token para google/auth")
+@router.get("/token", summary="Token")
 async def get_token(token: str = Depends(oauth2_scheme)):
-    """
-    NO USAR: esta ruta es implementada para la llamada de la ruta google/auth
-    """
+    
     return jwt.decode(token, GOOGLE_CLIENT_SECRET, algorithms=["HS256"])
